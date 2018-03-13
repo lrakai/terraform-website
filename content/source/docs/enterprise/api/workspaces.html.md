@@ -10,50 +10,42 @@ sidebar_current: "docs-enterprise2-api-workspaces"
 
 Workspaces represent running infrastructure managed by Terraform.
 
+## Create a Workspace
 
-
-
-## Create a Workspace with a VCS Repository
-
-This endpoint is used to create a new workspace which references an `oauth-token`, `linkable-repo-id` and `ingress-trigger-attributes` to configure the connection to VCS.
+This endpoint is used to create a new workspace either with or without a VCS configuration.
 
 | Method | Path           |
 | :----- | :------------- |
-| POST | /compound-workspaces |
-
-
+| POST | /organizations/:organization_name/workspaces |
 
 ### Parameters
 
-- `:organization` (`string: <required>`) - Specifies the username or organization name under which to create the workspace. The organization must already exist in the system, and the user must have permissions to create new workspaces. This parameter is specified in the URL path.
-- `oauth-token-id` (`string: <optional>`) - Specifies the VCS Connection (OAuth Conection + Token) to use as identified. This ID can be obtained from the [oauth-tokens](./oauth-tokens.html) endpoint.
-- `default-branch` (`boolean: true`) - specifies if the default branch should be used.
-- `ingress-submodules` (`boolean: false`) - Specifies whether submodules should be fetched when cloning the VCS repository.
-- `linkable-repo-id` (`string: <optional>`) - This is the reference to your VCS repository in the format :org/:repo where :org and :repo refer to the organization and repository in your VCS provider.
-- `name` (`string: <required>`) - Specifies the name of the workspace, which can only include letters, numbers, `-`, and `_`. This will be used as an identifier and must be unique in the organization.
-- `working-directory` (`string:''`) - Specifies the directory that Terraform will execute within. This defaults to the root of your repository and is typically set to a subdirectory matching the environment when multiple environments exist within the same repository.
+- `:organization_name` (`string: <required>`) - Specifies the organization name under which to create the workspace. The organization must already exist in the system, and the user must have permissions to create new workspaces. This parameter is specified in the URL path.
+- `name`
 
-### Sample Payload
+### Create a Workspace Without a VCS Repository
+
+If you supply nothing but a name, you can create a workspace without configuring it against a VCS repository.
+
+#### Parameters
+
+- `name` (`string: <required>`) - Specifies the name of the workspace, which can only include letters, numbers, `-`, and `_`. This will be used as an identifier and must be unique in the organization.
+
+#### Sample Payload
 
 ```json
 {
-  "data": {
+  "data":
+  {
     "attributes": {
-      "name":"workspace-demo",
-      "working-directory":"",
-      "linkable-repo-id":"skierkowski/terraform-test-proj",
-      "oauth-token-id": "ot-hmAyP66qk2AMVdbJ",
-      "ingress-trigger-attributes": {
-        "branch":"",
-        "default-branch":true
-      }
+      "name":"workspace-demo"
     },
-    "type":"compound-workspaces"
+    "type":"workspaces"
   }
 }
 ```
 
-### Sample Request
+#### Sample Request
 
 ```shell
 $ curl \
@@ -61,10 +53,10 @@ $ curl \
   --header "Content-Type: application/vnd.api+json" \
   --request POST \
   --data @payload.json \
-  https://app.terraform.io/api/v2/compound-workspaces
+  https://app.terraform.io/api/v2/organizations/my-organization/workspaces
 ```
 
-### Sample Response
+#### Sample Response
 
 ```json
 {
@@ -80,11 +72,6 @@ $ curl \
       "working-directory": "",
       "terraform-version": "0.11.0",
       "can-queue-destroy-plan": false,
-      "ingress-trigger-attributes": {
-        "branch": "",
-        "default-branch": true,
-        "ingress-submodules": false
-      },
       "permissions": {
         "can-update": true,
         "can-destroy": false,
@@ -116,35 +103,42 @@ $ curl \
 }
 ```
 
-## Create a Workspace Without a VCS Repository
+### Create a Workspace with a VCS Repository
 
-The default `/workspaces` endpoint creates a workspace without configuring the VCS connection (`ingress-trigger`).
+By supplying the necessary attributes under a `vcs-repository` object, you can create a Workspace that is configured against a VCS Repository.
 
-| Method | Path           |
-| :----- | :------------- |
-| POST | /organizations/:organization_username/workspaces |
+#### Parameters
 
+- `name` (`string: <required>`) - Specifies the name of the workspace, which can only include letters, numbers, `-`, and `_`. This will be used as an identifier and must be unique in the organization.
+- `terraform_version` (`string: <optional>`) - Specifices the version of Terraform to use for this workspace.
+- `working-directory` (`string: ''`) - Specifies a relative path that Terraform will execute within. This defaults to the root of your repository and is typically set to a subdirectory matching the environment when multiple environments exist within the same repository.
+- `vcs-repo.oauth-token-id` (`string: <optional>`) - Specifies the VCS Connection (OAuth Conection + Token) to use as identified. This ID can be obtained from the [oauth-tokens](./oauth-tokens.html) endpoint.
+- `vcs-repo.branch` (`string: ''`) - Specifies the repository branch that Terraform will execute from. If left null or submitted as an empty string, this defaults to the repository's default branch (e.g. `master`) .
+- `vcs-repo.ingress-submodules` (`boolean: false`) - Specifies whether submodules should be fetched when cloning the VCS repository.
+- `vcs-repo.identifier` (`string: <optional>`) - This is the reference to your VCS repository in the format :org/:repo where :org and :repo refer to the organization and repository in your VCS provider.
 
-
-### Parameters
-
-- `:organization_username` (`string: <required>`) - Specifies the username or organization name under which to create the workspace. The organization must already exist in the system, and the user must have permissions to create new workspaces. This parameter is specified in the URL path.
-
-### Sample Payload
+#### Sample Payload
 
 ```json
 {
-  "data":
-  {
+  "data": {
     "attributes": {
-      "name":"workspace-demo"
+      "name":"workspace-demo",
+      "terraform_version":"0.11.1",
+      "working-directory":"",
+      "vcs-repo": {
+        "identifier":"skierkowski/terraform-test-proj",
+        "oauth-token-id": "ot-hmAyP66qk2AMVdbJ",
+        "branch":"",
+        "default-branch":true
+      }
     },
     "type":"workspaces"
   }
 }
 ```
 
-### Sample Request
+#### Sample Request
 
 ```shell
 $ curl \
@@ -155,7 +149,7 @@ $ curl \
   https://app.terraform.io/api/v2/organizations/my-organization/workspaces
 ```
 
-### Sample Response
+#### Sample Response
 
 ```json
 {
@@ -170,7 +164,22 @@ $ curl \
       "created-at": "2017-11-02T23:55:16.142Z",
       "working-directory": null,
       "terraform-version": "0.10.8",
-      "can-queue-destroy-plan": true
+      "can-queue-destroy-plan": true,
+      "vcs-repo": {
+        "identifier": "skierkowski/terraform-test-proj",
+        "branch": "",
+        "oauth-token-id": "ot-hmAyP66qk2AMVdbJ",
+        "ingress-submodules": false
+      },
+      "permissions": {
+        "can-update": true,
+        "can-destroy": false,
+        "can-queue-destroy": false,
+        "can-queue-run": false,
+        "can-update-variable": false,
+        "can-lock": false,
+        "can-read-settings": true
+      }
     },
     "relationships": {
       "organization": {
@@ -199,20 +208,20 @@ Update the workspace settings
 
 | Method | Path           |
 | :----- | :------------- |
-| PATCH | /compound-workspaces/:workspace_id |
-
+| PATCH | /organizations/:organization_name/workspaces/:workspace_id |
 
 
 ### Parameters
 
-- `:organization` (`string: <required>`) - Specifies the organization name under which to create the workspace. The organization must already exist in the system, and the user must have permissions to create new workspaces. This parameter is specified in the URL path.
+- `:organization_name` (`string: <required>`) - Specifies the organization name under which to create the workspace. The organization must already exist in the system, and the user must have permissions to create new workspaces. This parameter is specified in the URL path.
 - `:workspace_id` (`string: <required>`) - Specifies the workspace ID to update.
-- `oauth-token-id` (`string: <optional>`) - Specifies the VCS Connection (OAuth Conection + Token) to use as identified. This ID can be obtained from the [oauth-tokens](./oauth-tokens.html) endpoint.
-- `default-branch` (`boolean: true`) - specifies if the default branch should be used.
-- `ingress-submodules` (`boolean: false`) - Specifies whether submodules should be fetched when cloning the VCS repository.
-- `linkable-repo-id` (`string: <required>`) - This is the reference to your VCS repository in the format :org/:repo
 - `name` (`string: <required>`) - Specifies the name of the workspace, which can only include letters, numbers, `-`, and `_`. This will be used as an identifier and must be unique in the organization.
-- `working-directory` (`string:''`) - Specifies the directory that Terraform will execute within. This defaults to the root of your repository and is typically set to a subdirectory matching the environment when multiple environments exist within the same repository.
+- `terraform_version` (`string: <optional>`) - Specifices the version of Terraform to use for this workspace.
+- `working-directory` (`string: ''`) - Specifies the directory that Terraform will execute within. This defaults to the root of your repository and is typically set to a subdirectory matching the environment when multiple environments exist within the same repository.
+- `vcs-repo.branch` (`string: ''`) - Specifies the repository branch that Terraform will execute from. If left null or as an empty string, this defaults to the repository's default branch (e.g. `master`) .
+- `vcs-repo.oauth-token-id` (`string: <optional>`) - Specifies the VCS Connection (OAuth Conection + Token) to use as identified. This ID can be obtained from the [oauth-tokens](./oauth-tokens.html) endpoint.
+- `vcs-repo.ingress-submodules` (`boolean: false`) - Specifies whether submodules should be fetched when cloning the VCS repository.
+- `vcs-repo.identifier` (`string: <required>`) - This is the reference to your VCS repository in the format :org/:repo
 
 ### Sample Payload
 
@@ -221,16 +230,16 @@ Update the workspace settings
   "data": {
     "attributes": {
       "name":"my-workspace-2",
+      "terraform_version":"0.11.1",
       "working-directory":"",
-      "oauth-token-id": "ot-hmAyP66qk2AMVdbJ",
-      "linkable-repo-id":"skierkowski/terraform-test-proj",
-      "ingress-trigger-attributes": {
+      "vcs-repo": {
+        "identifier":"skierkowski/terraform-test-proj",
         "branch":"",
         "ingress-submodules":false,
-        "default-branch":true
+        "oauth-token-id": "ot-hmAyP66qk2AMVdbJ",
       }
     },
-    "type":"compound-workspaces"
+    "type":"workspaces"
   }
 }
 ```
@@ -299,7 +308,7 @@ This endpoint lists workspaces in the organization.
 
 ### Parameters
 
-- `:organization` (`string: <required>`) - Specifies the username or organization name under which to list the workspaces. This is specified in the URL path.
+- `:organization` (`string: <required>`) - Specifies the organization name under which to list the workspaces. This is specified in the URL path.
 
 ### Sample Request
 
@@ -413,4 +422,303 @@ $ curl \
   --header "Content-Type: application/vnd.api+json" \
   --request DELETE \
   https://app.terraform.io/api/v2/organizations/my-organization/workspaces/my-workspace
+```
+
+
+## Lock a workspace
+
+This endpoint locks a workspace.
+
+| Method | Path           |
+| :----- | :------------- |
+| POST | /workspaces/:workspace_id/actions/lock |
+
+### Parameters
+
+* `:workspace_id` (`string: <required>`) - Specifies the workspace ID to lock.
+* `reason` (`string: <optional>`) - Specifies the reason for locking the workspace.
+
+### Sample Request
+
+```shell
+$ curl \
+  --header "Authorization: Bearer $ATLAS_TOKEN" \
+  --header "Content-Type: application/vnd.api+json" \
+  --request POST \
+  https://app.terraform.io/api/v2/workspaces/ws-YnyXLq9fy38afEeb/actions/lock
+```
+
+### Sample Response
+
+```json
+{
+  "data": {
+    "attributes": {
+      "auto-apply": false,
+      "can-queue-destroy-plan": false,
+      "created-at": "2017-11-02T23:23:53.765Z",
+      "environment": "default",
+      "locked": true,
+      "name": "my-workspace",
+      "permissions": {
+        "can-destroy": true,
+        "can-lock": true,
+        "can-queue-destroy": true,
+        "can-queue-run": true,
+        "can-read-settings": true,
+        "can-update": true,
+        "can-update-variable": true
+      },
+      "terraform-version": "0.10.8",
+      "vcs-repo": {
+        "branch": "",
+        "identifier": "my-organization/my-repository",
+        "ingress-submodules": false,
+        "oauth-token-id": "ot-hmAyP66qk2AMVdbJ"
+      },
+      "working-directory": null
+    },
+    "id": "ws-YnyXLq9fy38afEeb",
+    "relationships": {
+      "locked-by": {
+        "data": {
+          "id": "my-user",
+          "type": "users"
+        },
+        "links": {
+          "related": "/api/v2/users/my-user"
+        }
+      }
+    },
+    "type": "workspaces"
+  }
+}
+```
+
+
+## Unlock a workspace
+
+This endpoint unlocks a workspace.
+
+| Method | Path           |
+| :----- | :------------- |
+| POST | /workspaces/:workspace_id/actions/unlock |
+
+### Parameters
+
+* `:workspace_id` (`string: <required>`) - Specifies the workspace ID to unlock.
+
+### Sample Request
+
+```shell
+$ curl \
+  --header "Authorization: Bearer $ATLAS_TOKEN" \
+  --header "Content-Type: application/vnd.api+json" \
+  --request POST \
+  https://app.terraform.io/api/v2/workspaces/ws-YnyXLq9fy38afEeb/actions/unlock
+```
+
+### Sample Response
+
+```json
+{
+  "data": {
+    "attributes": {
+      "auto-apply": false,
+      "can-queue-destroy-plan": false,
+      "created-at": "2017-11-02T23:23:53.765Z",
+      "environment": "default",
+      "locked": false,
+      "name": "my-workspace",
+      "permissions": {
+        "can-destroy": true,
+        "can-lock": true,
+        "can-queue-destroy": true,
+        "can-queue-run": true,
+        "can-read-settings": true,
+        "can-update": true,
+        "can-update-variable": true
+      },
+      "terraform-version": "0.10.8",
+      "vcs-repo": {
+        "branch": "",
+        "identifier": "my-organization/my-repository",
+        "ingress-submodules": false,
+        "oauth-token-id": "ot-hmAyP66qk2AMVdbJ"
+      },
+      "working-directory": null
+    },
+    "id": "ws-YnyXLq9fy38afEeb",
+    "type": "workspaces"
+  }
+}
+```
+
+
+## Assign an SSH key to a workspace
+
+This endpoint assigns an SSH key to a workspace.
+
+| Method | Path           |
+| :----- | :------------- |
+| PATCH | /workspaces/:workspace_id/relationships/ssh-key |
+
+### Parameters
+
+* `:workspace_id` (`string: <required>`) - Specifies the workspace ID to assign the SSH key to.
+* `id` (`string: <required>`) - Specifies the SSH key ID to assign. This ID can be obtained from the [ssh-keys](./ssh-keys.html) endpoint.
+
+#### Sample Payload
+
+```json
+{
+  "data":
+  {
+    "attributes": {
+      "id":"sshkey-GxrePWre1Ezug7aM"
+    },
+    "type":"workspaces"
+  }
+}
+```
+
+### Sample Request
+
+```shell
+$ curl \
+  --header "Authorization: Bearer $ATLAS_TOKEN" \
+  --header "Content-Type: application/vnd.api+json" \
+  --request POST \
+  --data @payload.json \
+  https://app.terraform.io/api/v2/workspaces/ws-erEAnPmgtm5mJr77/relationships/ssh-key
+```
+
+### Sample Response
+
+```json
+{
+  "data": {
+    "attributes": {
+      "auto-apply": false,
+      "can-queue-destroy-plan": false,
+      "created-at": "2017-11-02T23:24:05.997Z",
+      "environment": "default",
+      "ingress-trigger-attributes": {
+        "branch": "",
+        "default-branch": true,
+        "ingress-submodules": false
+      },
+      "locked": false,
+      "name": "my-workspace-2",
+      "terraform-version": "0.10.8",
+      "working-directory": ""
+    },
+    "id": "ws-erEAnPmgtm5mJr77",
+    "links": {
+      "self": "/api/v2/organizations/my-organization/workspaces/ws-erEAnPmgtm5mJr77"
+    },
+    "relationships": {
+      "latest-run": {
+        "data": null
+      },
+      "organization": {
+        "data": {
+          "id": "my-organization",
+          "type": "organizations"
+        }
+      },
+      "ssh-key": {
+        "data": {
+          "id": "sshkey-GxrePWre1Ezug7aM",
+          "type": "ssh-keys"
+        },
+        "links": {
+          "related": "/api/v2/ssh-keys/sshkey-GxrePWre1Ezug7aM"
+        }
+      }
+    },
+    "type": "workspaces"
+  }
+}
+```
+
+
+## Unassign an SSH key from a workspace
+
+This endpoint unassigns the currently assigned SSH key from a workspace.
+
+| Method | Path           |
+| :----- | :------------- |
+| PATCH | /workspaces/:workspace_id/relationships/ssh-key |
+
+### Parameters
+
+* `:workspace_id` (`string: <required>`) - Specifies the workspace ID to unassign the currently assigned SSH key from.
+
+#### Sample Payload
+
+```json
+{
+  "data":
+  {
+    "attributes": {
+      "id":null
+    },
+    "type":"workspaces"
+  }
+}
+```
+
+### Sample Request
+
+```shell
+$ curl \
+  --header "Authorization: Bearer $ATLAS_TOKEN" \
+  --header "Content-Type: application/vnd.api+json" \
+  --request POST \
+  --data @payload.json \
+  https://app.terraform.io/api/v2/workspaces/ws-erEAnPmgtm5mJr77/relationships/ssh-key
+```
+
+### Sample Response
+
+```json
+{
+  "data": {
+    "attributes": {
+      "auto-apply": false,
+      "can-queue-destroy-plan": false,
+      "created-at": "2017-11-02T23:24:05.997Z",
+      "environment": "default",
+      "ingress-trigger-attributes": {
+        "branch": "",
+        "default-branch": true,
+        "ingress-submodules": false
+      },
+      "locked": false,
+      "name": "my-workspace-2",
+      "terraform-version": "0.10.8",
+      "working-directory": ""
+    },
+    "id": "ws-erEAnPmgtm5mJr77",
+    "links": {
+      "self": "/api/v2/organizations/my-organization/workspaces/ws-erEAnPmgtm5mJr77"
+    },
+    "relationships": {
+      "latest-run": {
+        "data": null
+      },
+      "organization": {
+        "data": {
+          "id": "my-organization",
+          "type": "organizations"
+        }
+      },
+      "ssh-key": {
+        "data": null
+      }
+    },
+    "type": "workspaces"
+  }
+}
 ```

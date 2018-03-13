@@ -1,4 +1,6 @@
-VERSION?="0.3.29"
+VERSION?="0.3.32"
+# EXTEND is a temporary environment variable used to show/hide the "Extend"
+# navigation link
 EXTEND=${SHOW_EXTEND}
 
 build:

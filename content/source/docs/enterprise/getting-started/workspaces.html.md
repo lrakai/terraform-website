@@ -12,25 +12,26 @@ At this point, you've done all the setup TFE needs, and can start using it for r
 
 ## About Workspaces
 
-_Workspaces_ are how TFE organizes infrastructure. (If you've used previous versions of TFE, workspaces used to be called environments.)
+_Workspaces_ are how TFE organizes infrastructure. If you've used the legacy version of TFE, workspaces used to be called environments.
 
 A workspace consists of:
 
-* A collection of Terraform configurations (retrieved from a VCS repo).
-* Values for any variables those configurations require.
-* Persistent stored state for the resources it manages.
+- A collection of Terraform configurations (retrieved from a VCS repo).
+- Values for any variables those configurations require.
+- Persistent stored state for the resources it manages.
+- Historical state and run logs.
 
 A well-designed Terraform workflow uses multiple configurations, so you can manage each logical grouping of infrastructure with its own code. Additionally, it's common to use the same configuration multiple times (with different values for variables) to manage different environments.
 
 ## Creating a Workspace
 
-~> **Note:** Currently, only members of the "owners" team can create new workspaces.
+~> **Note:** Only members of the "owners" team can create new workspaces.
 
-First, make sure you're on TFE's front page. If you're still on the VCS settings (or any other page), click the Terraform logo button in the upper left and choose "Terraform Enterprise".
+First, make sure you're viewing the workspace list. If you're still on the VCS settings (or any other page), click the "Workspaces" button in the top navigation bar.
 
 ![navigate](./images/work-navigate.png)
 
-TFE's front page is a list of the workspaces you have access to; if you haven't created any, it's empty.
+The workspace list shows all of the workspaces you have access to; if you haven't created any, it's empty.
 
 To create your first workspace, click the "+ New Workspace" button in the upper right.
 
@@ -69,8 +70,6 @@ When you create a new workspace, a few things happen:
 
     ![finish dialog](./images/work-finished.png)
 - TFE automatically registers a webhook with your VCS service. The next time new commits appear in the selected branch of that repo, TFE will automatically queue a Terraform plan for the workspace.
-
-    **Note:** If you don't want to automatically queue Terraform plans for new commits, you must delete the workspace's webhook manually, via your VCS service's interface or API.
 
 ## Editing Variables
 
@@ -127,14 +126,14 @@ Each workspace has a "Settings" page (available from the top links when viewing 
 
 Most of your time in TFE is spent in two views:
 
-* The main page, which is a list of workspaces and their statuses. Use this to get an overview of the workspaces you're responsible for, and to navigate between workspaces.
+* The workspace list. Use this to get an overview of the workspaces you're responsible for, and to navigate between workspaces.
 
     ![main page](./images/work-mainpage.png)
 
-    To get back to the main page at any time, click the Terraform logo button in the upper left and choose "Terraform Enterprise".
+    To get back to the workspace list at any time, click the "Workspaces" button in the top navigation bar.
 * The individual workspace pages, which provide more detail about a workspace's status, and let you manage runs, variables, and settings.
 
-    To reach a workspace page, click that workspace's entry on the main page.
+    To reach a workspace page, click that workspace's entry on the workspace list.
 
     ![a workspace page](./images/work-workspacepage.png)
 

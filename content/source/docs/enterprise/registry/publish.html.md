@@ -8,7 +8,7 @@ sidebar_current: "docs-enterprise2-registry-publish"
 
 # Publishing Modules to the Terraform Enterprise Private Module Registry
 
-~> **Note:** Currently, the private module registry only supports BitBucket Server and GitHub/GitHub Enterprise.
+~> **Note:** Currently, the private module registry works with all supported VCS providers except Bitbucket Cloud.
 
 Terraform Enterprise (TFE)'s private module registry lets you publish Terraform modules to be consumed by users across your organization. It works much like the public [Terraform Registry](/docs/registry/index.html), except that it uses your configured [VCS integrations][vcs] instead of requiring public GitHub repositories.
 
@@ -62,7 +62,7 @@ This brings you to the "Add a New Module" page, which has a text field and at le
 
 If you have multiple VCS providers configured, use the buttons to select one. In the text field, enter the name of the repository for the module you're adding. Then click the "Publish Module" button.
 
-~> **Note:** The name you type into the repo field will usually be something like `hashicorp/terraform-aws-vpc` or `INFRA/terraform-azure-appserver`. Module repo names use a `terraform-<PROVIDER>-<NAME>` format, and VCS providers use `<NAMESPACE>/<REPO NAME>` strings to locate repositories. (For most providers the namespace is a username or organization name, but Bitbucket Server uses project keys, like `INFRA`.)
+~> **Note:** The name you type into the repo field will usually be something like `hashicorp/terraform-aws-vpc` or `INFRA/terraform-azure-appserver`. Module repo names use a `terraform-<PROVIDER>-<NAME>` format, and VCS providers use `<NAMESPACE>/<REPO NAME>` strings to locate repositories. (For most providers the namespace is an organization name, but Bitbucket Server uses project keys, like `INFRA`.)
 
 TFE will display a loading page while it imports the module versions from version control, and will then take you to the new module's details page. On the details page you can view available versions, read documentation, and copy a usage example.
 
@@ -94,3 +94,9 @@ To delete a module or version:
 ~> **Note:** If a deletion would leave a module with no versions, the module will be automatically deleted.
 
 ![TFE screenshot: the deletion dialog](./images/publish-delete.png)
+
+## Sharing Modules Across Organizations
+
+In normal operation, TFE doesn't allow one organization's workspaces to use private modules from a different organization. (When TFE runs Terraform, it provides temporary credentials that are only valid for the workspace's organization, and uses those credentials to access modules.) And although it's possible to mix modules from multiple organizations when running Terraform on the command line, we strongly recommend against it.
+
+However, you can easily share modules across organizations by sharing the underlying VCS repository. Grant each organization access to the module's repo, then add the module to each organization's registry. When you push tags to publish new module versions, both organizations will update appropriately.

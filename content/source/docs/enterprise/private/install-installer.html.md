@@ -17,29 +17,36 @@ Terraform Enterprise installer beta program. All other customers can follow the
 
 ## Preflight
 
-Before you begin, you'll need to get a few bits of data as well as get a Linux
-instance ready.
+Before you begin, you'll need to prepare data files and a Linux instance.
 
 ### Data Files
 
-* TLS private key and certificate _Optional: Self-signed materials can be used_
+* TLS private key and certificate
+  * The installer allows for using a self-signed certificate but HashiCorp does
+    _not_ recommended this. Your VCS provider will likely reject that certificate
+    when sending webhooks. If you do use the self-signed certificate, you must configure
+    each webhook to ignore SSL errors within your VCS provider.
+  * If you do not have access to a certificate, you can use
+    [Let's Encrypt](https://letsencrypt.org/getting-started/) to request one for free.
+    You will provide the path on the host system to the created certificate and key
+    when requested by the setup process.
 * License key (provided by HashiCorp)
 
 ### Linux Instance
 
-You'll be installing the software onto a Linux instance of your own choosing.
+Install the software on a Linux instance of your choosing.
 You will start and manage this instance like any other server.
 
 The Private Terraform Enterprise Installer currently supports the following
 operating systems:
 
 * Debian 7.7+
-* Ubuntu 14.04 / 15.10 / 16.04
+* Ubuntu 14.04 / 16.04
 * Fedora 21 / 22
-* Red Hat Enterprise Linux 6.5+
-* CentOS 6+
-* Amazon Linux 2014.03 / 2014.09 / 2015.03 / 2015.09 / 2016.03 / 2016.09 / 2017.03
-* Oracle Linux 6.5+
+* Red Hat Enterprise Linux 7.2+
+* CentOS 7+
+* Amazon Linux 2016.03 / 2016.09 / 2017.03
+* Oracle Linux 7.2+
 
 #### Hardware Requirements
 
@@ -52,7 +59,9 @@ Terraform Enterprise application as well as the Terraform plans and applies.
 
 #### Software Requirements
 
-Check Docker compatibility:
+~> RedHat Enterprise Linux (RHEL) has a specific set of requirements. Please see the [RHEL Install Guide](./rhel-install-guide.html) before continuing.
+
+For Linux distributions other than RHEL, check Docker compatibility:
 
   * The instance should run a current version of Docker engine (1.7.1 - 17.06.2-ce, 17.06.2-ce recommended). This also requires a 64-bit distribution with a minimum Linux Kernel version of 3.10.
     * In Online mode, the installer will install Docker automatically
@@ -74,20 +83,27 @@ Check Docker compatibility:
 ### Operational Mode Decision
 
 Terraform Enterprise can store its state in a few different ways and you'll
-need to decide which works best for your installation:
+need to decide which works best for your installation. Each option has a
+different approach to
+[recovering from failures](./reliability-availability.html#recovery-from-failures-1)
+and should be selected based on your organization's preferences.
 
-1. **Demo** - This mode stores all data on the instance. The data can be
-   backed up with the snapshot mechanism for restore later.
 1. **Production - External Services** - This mode stores the majority of the
-   stateful data used by the instance in an external Postgresql database as
-   well as an external S3 compatible endpoint. There is still critical data
+   stateful data used by the instance in an external PostgreSQL database as
+   well as an external S3-compatible endpoint. There is still critical data
    stored on the instance that must be managed with snapshots. Be sure to
    checked the [PostgreSQL Requirements](#postgresql-requirements) for what
-   needs to be present for Terraform Enterprise to work.
+   needs to be present for Terraform Enterprise to work. This option is best
+   for users with expertise managing PostgreSQL or users that have access
+   to managed PostgreSQL offerings like [AWS RDS](https://aws.amazon.com/rds/).
 1. **Production - Mounted Disk** - This mode stores data in a separate
    directory on the host, with the intention that the directory is
    configured to store its data on an external disk, such as EBS, iSCSI,
-   etc.
+   etc. This option is best for users with experience mounting performant
+   block storage.
+1. **Demo** - This mode stores all data on the instance. The data can be
+   backed up with the snapshot mechanism for restore later.
+
 
 The decision you make will be entered during setup.
 
@@ -143,11 +159,11 @@ From a shell on your instance, in the directory where you placed the `replicated
 	  to the `.airgap` file that you downloaded using the initial instruction in
     your setup email.
 1. Secure access to the Admin Console. We recommend at least setting up the
-   simple password auth. If you're so inclined, LDAP authentication can also be 
+   simple password auth. If you're so inclined, LDAP authentication can also be
    configured for the Admin Console.
 1. The system will now perform a set of pre-flight checks on the instance and
-   configuration thus far and indicate any failures. You can either fix the issues 
-   and re-run the checks or ignore the warnings and proceed. If you do proceed 
+   configuration thus far and indicate any failures. You can either fix the issues
+   and re-run the checks or ignore the warnings and proceed. If you do proceed
    despite the warnings, you are assuming the support responsibility.
 1. Configure the operational mode for this installation. See
    [Operational Modes](#operational-mode-decision) for information on what the different values
@@ -160,10 +176,10 @@ From a shell on your instance, in the directory where you placed the `replicated
 
 #### PostgreSQL Requirements
 
-When Terraform Enterprise is using an external PostgreSQL database, the
+When Terraform Enterprise uses an external PostgreSQL database, the
 following must be present on it:
 
-* The version of PostgreSQL must be 9.4 or greater
+* PostgreSQL version 9.4 or greater
 * User with access to ownership semantics on the referenced database
 * The following PostgreSQL schemas must be installed into the database: `rails`, `vault`, `registry`
 
@@ -207,4 +223,3 @@ page](./config.html) to continue setting up Terraform Enterprise.
 2. Download the new `.airgap` package onto the instance and put it into the `Update Path` location.
 3. From the admin console dashboard (`https://[hostname or ip of your instance]:8800/dashboard`) click the "Check Now" button; the new version should be recognized, then click "View Update".
 4. Review the release notes and then click "Install Update".
-

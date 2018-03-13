@@ -24,8 +24,8 @@ This set of APIs covers create, update, list and delete operations on variables.
 - `category` (`string: "terraform"|"env"`) - specifies whether this should be parsed as a Terraform variable (with support for HCL) or as an environment variable. This governs how it is accessible in the Terraform configuration.
 - `hcl` (`bool: false`) - use HCL when setting the value of the string.
 - `sensitive` (`bool: false`) - marks the variable as sensitive. If true then the variable is written once and not visible thereafter.
-- `?filter[workspace][name]` (`string: required`) - variables must be associated with a workspace. Specify the workspace's name with the `filter` query parameter.
-- `?filter[organization][username]` (`string: required`) - workspaces must be owned by an organization. Specify which organization owns the workspace with the `filter` query parameter.
+- `filter[workspace][name]` (`string: required`) - variables must be associated with a workspace. Specify the workspace's name with the `filter` query parameter.
+- `filter[organization][name]` (`string: required`) - workspaces must be owned by an organization. Specify which organization owns the workspace with the `filter` query parameter.
 
 ### Sample Payload
 
@@ -43,7 +43,7 @@ This set of APIs covers create, update, list and delete operations on variables.
   },
   "filter": {
     "organization": {
-      "username":"my-organization"
+      "name":"my-organization"
     },
     "workspace": {
       "name":"my-workspace"
@@ -103,8 +103,8 @@ curl \
 
 ### Parameters
 
-- `?filter[organization][username]` (`optional`) - Optionally filter the list to an organization given the organization name
-- `?filter[workspace][name]` (`optional`) - Optionally filter the list to a workspace given the workspace name
+- `filter[organization][name]` (`optional`) - Optionally filter the list to an organization given the organization name. If this parameter is provided, `filter[workspace][name]` must also be provided.
+- `filter[workspace][name]` (`optional`) - Optionally filter the list to a workspace given the workspace name. If this parameter is provided, `filter[organization][name]` must also be provided.
 
 ### Sample Request
 
@@ -112,8 +112,8 @@ curl \
 $ curl \
   --header "Authorization: Bearer $ATLAS_TOKEN" \
   --header "Content-Type: application/vnd.api+json" \
-https://app.terraform.io/api/v2/vars?filter%5Borganization%5D%5Busername%5D=my-organization&filter%5Bworkspace%5D%5Bname%5D=my-workspace
-# ?filter[organization][username]=my-organization&filter[workspace][name]=demo01
+"https://app.terraform.io/api/v2/vars?filter%5Borganization%5D%5Bname%5D=my-organization&filter%5Bworkspace%5D%5Bname%5D=my-workspace"
+# ?filter[organization][name]=my-organization&filter[workspace][name]=demo01
 ```
 
 ### Sample Response
@@ -220,3 +220,22 @@ $ curl \
 }
 ```
 
+## Delete Variables
+
+| Method | Path           |
+| :----- | :------------- |
+| DELETE | /vars/:variable_id |
+
+### Parameters
+
+- `:variable_id` (`string: <required>`) - specifies the ID of the variable to be deleted. Specified in the request path.
+
+### Sample Request
+
+```bash
+$ curl \
+  --header "Authorization: Bearer $ATLAS_TOKEN" \
+  --header "Content-Type: application/vnd.api+json" \
+  --request DELETE \
+  https://app.terraform.io/api/v2/vars/var-yRmifb4PJj7cLkMG
+```
